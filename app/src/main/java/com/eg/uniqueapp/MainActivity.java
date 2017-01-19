@@ -2,10 +2,12 @@ package com.eg.uniqueapp;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -18,6 +20,9 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+
+import com.eg.uniqueapp.auth.SettingsActivity;
+import com.eg.uniqueapp.control.PhoneChecker;
 
 import org.w3c.dom.Text;
 
@@ -39,7 +44,8 @@ public class MainActivity extends AppCompatActivity {
 
     ArrayList<String> permissions =  new ArrayList<String>();
     private boolean isPermissioned = false;
-    String deviceId = "";
+    private String deviceId = "";
+    private String androidId = "";
 
     @BindView(R.id.text_views)
     TextView textView;
@@ -51,20 +57,17 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         checkPermission();
 
-        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        deviceId = telephonyManager.getDeviceId();
-        Log.e("TAG","Device Id is : "+ deviceId);
-        textView.setText(deviceId);
+        PhoneChecker.getInstance().initialize(this);
+
+        textView.setText(PhoneChecker.getInstance().getDeviceId() + " :: " + PhoneChecker.getInstance().getAndroidId());
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
     }
 
     @OnClick(R.id.fab) void fabButtonClick(View view){
-        Snackbar.make(view, "Devide Id is " + deviceId , Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
+        startActivity(new Intent(MainActivity.this, SettingsActivity.class));
     }
-
 
     public ArrayList<String> getPermissionRequested(ArrayList<String> perms){
         ArrayList<String> permissions = new ArrayList<String>();

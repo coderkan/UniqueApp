@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "1079397041786",
+    "firebase_url": "https://mapsoftproje.firebaseio.com",
+    "project_id": "mapsoftproje",
+    "storage_bucket": "mapsoftproje.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1079397041786:android:6171f2de36566937",
+        "android_client_info": {
+          "package_name": "com.eg.uniqueapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1079397041786-1517792ru6127gi41ut2b1bna5ea9vms.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdpecg86SjFxUKbHHsNLUfpwsyP3yVXtQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
