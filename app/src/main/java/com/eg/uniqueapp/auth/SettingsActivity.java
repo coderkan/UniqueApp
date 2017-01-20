@@ -1,6 +1,8 @@
 package com.eg.uniqueapp.auth;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -12,6 +14,7 @@ import android.widget.Toast;
 
 import com.eg.uniqueapp.R;
 import com.eg.uniqueapp.control.PhoneChecker;
+import com.eg.uniqueapp.model.DeviceInfoExt;
 import com.eg.uniqueapp.model.Model;
 import com.eg.uniqueapp.network.NetworkChecker;
 import com.eg.uniqueapp.network.Type;
@@ -25,6 +28,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.jaredrummler.android.device.DeviceName;
 
 import java.util.ArrayList;
 
@@ -50,6 +54,7 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
     private DatabaseReference root = FirebaseDatabase.getInstance().getReference().getRoot();
     private Type network = Type.NONE;
     private boolean isSignin = false;
+    private String refKey = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +62,8 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
         setContentView(R.layout.activity_settings);
         ButterKnife.bind(this);
 
+
+        deviceInfo();
 
         log(PhoneChecker.getInstance().getAndroidId());
         log(PhoneChecker.getInstance().getDeviceId());
@@ -70,6 +77,23 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
         setToolBar();
     }
 
+    private void deviceInfo() {
+        DeviceName.with(this).request(new DeviceName.Callback() {
+
+            @Override public void onFinished(DeviceName.DeviceInfo info, Exception error) {
+                String manufacturer = info.manufacturer;  // "Samsung"
+                String name = info.marketName;            // "Galaxy S7 Edge"
+                String model = info.model;                // "SAMSUNG-SM-G935A"
+                String codename = info.codename;          // "hero2lte"
+                String deviceName = info.getName();       // "Galaxy S7 Edge"
+                // FYI: We are on the UI thread.
+                String versionRelease = Build.VERSION.RELEASE;
+                DeviceInfoExt.Instance().add(info);
+                Log.e("TAG","Manufacturer : " + manufacturer + " : " + " Name : " + name + " Model : " + model + " Codename : " + codename + " DeviceName : " + deviceName + " VersionRelease : " + versionRelease );
+            }
+        });
+    }
+
     private void setToolBar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -77,6 +101,7 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
 
     @OnClick(R.id.fab) void fabButtonClick(View view){
         //addFireBase();
+        updateFireBase();
         strLog = "";
         writeList();
     }
@@ -144,18 +169,38 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
         list.clear();
         for(DataSnapshot data : ds.getChildren())
         {
+            DatabaseReference ref = data.getRef();
+
             Model model = new Model();
             model.setApplicationId(data.getValue(Model.class).getApplicationId());
             model.setImeiId(data.getValue(Model.class).getImeiId());
             model.setImeiId(data.getValue(Model.class).getAndroidId());
             list.add(model);
-            Log.e(TAG,model.toString());
+
+            if(model.getApplicationId().equals("1")){
+                Log.e("TAG","Model Application Id = 1");
+                refKey = ref.getKey();
+            }
+
+            Log.e(TAG,"Model Ref: " + ref.getKey().toString() + " : " + model.toString());
         }
     }
 
     private void addFireBase() {
-        Model model = new Model("31","321654987", "bbffddsadafdfaf" );
+        //Model model = new Model("1","11111111111", "2222222222222" );
+        Model model = new Model("2",PhoneChecker.getInstance().getDeviceId(), PhoneChecker.getInstance().getAndroidId());
+        model.add(DeviceInfoExt.Instance());
+        model.generateDate();
+
         root.child("Users").push().setValue(model);
+    }
+
+    private void updateFireBase() {
+        //Model model = new Model("1","11111111111", "2222222222222" );
+        Model model = new Model("365",PhoneChecker.getInstance().getDeviceId(), PhoneChecker.getInstance().getAndroidId());
+        model.add(DeviceInfoExt.Instance());
+        model.generateDate();
+        root.child("Users/"+refKey).setValue(model);
     }
 
     @Override

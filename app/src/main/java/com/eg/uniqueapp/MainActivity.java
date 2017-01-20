@@ -23,10 +23,13 @@ import android.widget.TextView;
 
 import com.eg.uniqueapp.auth.SettingsActivity;
 import com.eg.uniqueapp.control.PhoneChecker;
+import com.jaredrummler.android.device.DeviceName;
 
 import org.w3c.dom.Text;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -63,6 +66,32 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
+        String deviceName = DeviceName.getDeviceName();
+        Log.e("TAG","Device Name " + deviceName);
+
+        DeviceName.with(this).request(new DeviceName.Callback() {
+
+            @Override public void onFinished(DeviceName.DeviceInfo info, Exception error) {
+                String manufacturer = info.manufacturer;  // "Samsung"
+                String name = info.marketName;            // "Galaxy S7 Edge"
+                String model = info.model;                // "SAMSUNG-SM-G935A"
+                String codename = info.codename;          // "hero2lte"
+                String deviceName = info.getName();       // "Galaxy S7 Edge"
+                // FYI: We are on the UI thread.
+                String versionRelease = Build.VERSION.RELEASE;
+
+                Log.e("TAG","Manufacturer : " + manufacturer + " : " + " Name : " + name + " Model : " + model + " Codename : " + codename + " DeviceName : " + deviceName + " VersionRelease : " + versionRelease );
+
+            }
+        });
+
+        SimpleDateFormat databaseDateTimeFormate = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        String d = databaseDateTimeFormate.format(new Date());     //2009-06-30 08:29:
+
+        Log.e("TAG"," Date is : " + d);
+
     }
 
     @OnClick(R.id.fab) void fabButtonClick(View view){
