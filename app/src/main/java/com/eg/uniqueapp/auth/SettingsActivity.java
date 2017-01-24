@@ -55,15 +55,19 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
     private Type network = Type.NONE;
     private boolean isSignin = false;
     private String refKey = "";
+    private Model referenceModel = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         ButterKnife.bind(this);
-
-
         deviceInfo();
+        referenceModel = new Model();
+        referenceModel.setApplicationId("-1");
+        referenceModel.setAndroidId(PhoneChecker.getInstance().getAndroidId());
+        referenceModel.setImeiId(PhoneChecker.getInstance().getDeviceId());
+        referenceModel.add(DeviceInfoExt.Instance());
 
         log(PhoneChecker.getInstance().getAndroidId());
         log(PhoneChecker.getInstance().getDeviceId());
@@ -113,15 +117,81 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
     }
 
     @OnClick(R.id.button_auth) void authButtonClick(){
-        if(((network = NetworkChecker.isNetWorkAvailable(getApplicationContext())) == Type.NONE)){
-            message("Check Your Network Connection...");
-        }
-        if(list.size() == 0){
-            if(network != Type.NONE){
-                controlAuth();
+
+        String text = textAppId.getText().toString().trim();
+        if(text.length() == 0)
+            return;
+
+        boolean isEmptyAndroidId = false;
+        boolean isEmptyImeiId = false;
+        boolean isFoundedApplicationId = false;
+        if(list.size() != 0){
+            for(int i = 0; i < list.size(); i++) {
+
+                Model lmodel = list.get(i);
+
+                if(lmodel.getApplicationId().equals(text)){
+                    Log.e("TAG","Find in list... " + list.get(i).getApplicationId() + " :: " + lmodel.getRefKey());
+                    // Kayit var
+                    referenceModel.setApplicationId(text);
+                    isFoundedApplicationId = true;
+                    if(lmodel.getAndroidId().length() != 0){
+                        if(lmodel.getAndroidId().equals(referenceModel.getAndroidId())){
+                            Log("AndroidIds equals");
+                            isEmptyAndroidId = false;
+                        }else{
+                            Log("Android Id not matching");
+                        }
+                    }else{
+                        Log("Android Idxx : " + lmodel.getAndroidId().length());
+                        isEmptyAndroidId = true;
+                    }
+
+                    if(lmodel.getImeiId().length() != 0){
+                        if(lmodel.getImeiId().equals(referenceModel.getImeiId())){
+                            Log("ImeiIds equals");
+                            isEmptyImeiId = false;
+                        }else{
+                            Log("Android Imei Id not matching");
+                        }
+                    }else{
+                        isEmptyImeiId = true;
+                    }
+
+
+                    Log("Reference Key: " + lmodel.getRefKey());
+                    if(isEmptyAndroidId || isEmptyImeiId ){
+                        Log("Equality");
+                        if(lmodel.getRefKey().length() != 0){
+                            Log("Update Referans Key");
+                            referenceModel.generateDate();
+                            root.child("Users/"+lmodel.getRefKey()).setValue(referenceModel);
+
+                            // Shared Write Values
+
+                        }
+                    }
+                }else{
+                    Log("Not Found Application Id");
+
+                }
             }
+            if(!isFoundedApplicationId)
+                message("Not Found Application Id");
         }
-        log(textAppId.getText().toString());
+//        if(((network = NetworkChecker.isNetWorkAvailable(getApplicationContext())) == Type.NONE)){
+//            message("Check Your Network Connection...");
+//        }
+//        if(list.size() == 0){
+//            if(network != Type.NONE){
+//                controlAuth();
+//            }
+//        }
+        //log(textAppId.getText().toString());
+    }
+
+    private void Log(String message){
+        Log.e("TAG",message);
     }
 
     private void log(String msg){
@@ -174,14 +244,14 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
             Model model = new Model();
             model.setApplicationId(data.getValue(Model.class).getApplicationId());
             model.setImeiId(data.getValue(Model.class).getImeiId());
-            model.setImeiId(data.getValue(Model.class).getAndroidId());
+            model.setAndroidId(data.getValue(Model.class).getAndroidId());
+            model.setMarketName(data.getValue(Model.class).getMarketName());
+            model.setManufacturer(data.getValue(Model.class).getManufacturer());
+            model.setReleaseVersion(data.getValue(Model.class).getReleaseVersion());
+            model.setCodename(data.getValue(Model.class).getCodename());
+            model.setDate(data.getValue(Model.class).getDate());
+            model.setRefKey(ref.getKey());
             list.add(model);
-
-            if(model.getApplicationId().equals("1")){
-                Log.e("TAG","Model Application Id = 1");
-                refKey = ref.getKey();
-            }
-
             Log.e(TAG,"Model Ref: " + ref.getKey().toString() + " : " + model.toString());
         }
     }
@@ -200,6 +270,7 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
         Model model = new Model("365",PhoneChecker.getInstance().getDeviceId(), PhoneChecker.getInstance().getAndroidId());
         model.add(DeviceInfoExt.Instance());
         model.generateDate();
+
         root.child("Users/"+refKey).setValue(model);
     }
 

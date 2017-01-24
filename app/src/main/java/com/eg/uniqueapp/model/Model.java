@@ -17,7 +17,9 @@ public class Model {
     private String mMarketName;
     private String mCodename;
     private String mModel;
-    private String mReleaseVersion = Build.VERSION.RELEASE;;
+    private String mReleaseVersion = Build.VERSION.RELEASE;
+    private String refKey;
+
 
     public Model(){}
     public Model(String mApplicationId, String mImeiId, String mAndroidId){
@@ -122,5 +124,13 @@ public class Model {
 
     public void setmDate(String mDate) {
         this.mDate = mDate;
+    }
+
+    public String getRefKey() {
+        return refKey;
+    }
+
+    public void setRefKey(String refKey) {
+        this.refKey = refKey;
     }
 }
