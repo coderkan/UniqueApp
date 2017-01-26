@@ -1,27 +1,25 @@
 package com.eg.uniqueapp;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DecorContentParent;
 import android.support.v7.widget.Toolbar;
-import android.telephony.TelephonyManager;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
+
 
 import com.eg.uniqueapp.auth.SettingsActivity;
 import com.eg.uniqueapp.control.PhoneChecker;
@@ -29,6 +27,7 @@ import com.eg.uniqueapp.model.DeviceInfoExt;
 import com.eg.uniqueapp.model.Model;
 import com.eg.uniqueapp.network.NetworkChecker;
 import com.eg.uniqueapp.network.Type;
+import com.eg.uniqueapp.shared.SharedUtil;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -40,8 +39,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.jaredrummler.android.device.DeviceName;
-
-import org.w3c.dom.Text;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -84,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
     private String refKey = "";
 
     private Model referenceModel = null;
+    private boolean isRegistered = true;
 
 
     @Override
@@ -95,36 +93,178 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
         PhoneChecker.getInstance().initialize(this);
         deviceInfo();
         referenceModel = new Model();
-        referenceModel.setApplicationId("-1");
+        referenceModel.setApplicationId("-2");
         referenceModel.setAndroidId(PhoneChecker.getInstance().getAndroidId());
         referenceModel.setImeiId(PhoneChecker.getInstance().getDeviceId());
         referenceModel.add(DeviceInfoExt.Instance());
 
         textView.setText(PhoneChecker.getInstance().getDeviceId() + " :: " + PhoneChecker.getInstance().getAndroidId());
 
+        controlInit();
+
+        //authControl();
+        //registerControl();
+    }
+
+    private void controlInit() {
+        boolean hasAppId = false;
+        boolean hasNetworkAvailable = true;
+        String appId = SharedUtil.getValue(getApplicationContext(), getString(R.string.preference_app_id));
+        if (!appId.equals(SharedUtil.defValue))
+            hasAppId = true;
+
+        if(NetworkChecker.isNetWorkAvailable(getApplicationContext()) == Type.NONE)
+            hasNetworkAvailable = false;
+
+        if(!hasAppId && !hasNetworkAvailable){
+            DialogMessage dm = new DialogMessage(MainActivity.this, "Uyarı","Lütfen Cihazınızı İnternete Bağlayıp tekrar deneyiniz","Tamam","Çıkış");
+            dm.build();
+            dm.show();
+            return;
+        }
+        authControl();
+    }
+
+
+
+    private void registerControl() {
+        //message("Register Begin");
+        Log.e("TAG","Register Begin");
+        boolean hasAppId = false;
+        boolean hasCertainNotWork = false;
+        String appId = SharedUtil.getValue(getApplicationContext(), getString(R.string.preference_app_id));
+        if (!appId.equals(SharedUtil.defValue))
+            hasAppId = true;
+
+        if (list.size() != 0) {
+
+            for (int i = 0; i < list.size(); i++) {
+
+                Model lmodel = list.get(i);
+
+                if (hasAppId) {
+                    if (lmodel.getApplicationId().equals(appId)) { // App id kayıtlı diğer verilerin kontrolünü yap //
+                        Log.e("TAG","App Idler eşleşmektedir...");
+                        isRegistered = true;
+                        SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "1"); // Register oldu
+                    } else {
+                        Log.e("TAG","App Idler eşleşmemektedir...");
+
+                        // diger telefon bilgilerine bakılacak..
+                        if (lmodel.getAndroidId().equals(referenceModel.getAndroidId())) {
+                            Log.e("TAG", "Android Idler eşittir...");
+                            String aid = lmodel.getApplicationId();
+                            if(aid.length() != 0 && !aid.equals("-1")){
+                                SharedUtil.addValue(getApplicationContext(),getString(R.string.preference_app_id),aid);
+
+                            }
+                            isRegistered = true;
+                        } else {
+                            //SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "2"); // Register olmadı
+                            Log.e("TAG","XAndroid Idler eşit değildir..., Program Çalışmayacaktır...");
+
+                        }
+
+                        //
+                        if(lmodel.getApplicationId().equals("-1")){
+                            isRegistered = false;
+                        }
+                    }
+                } else {
+                    if (lmodel.getAndroidId().equals(referenceModel.getAndroidId())) {
+                        //SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "1"); // Register oldu
+                        String aid = lmodel.getApplicationId();
+                        if(aid.length() != 0 && !aid.equals("-1")){
+                            SharedUtil.addValue(getApplicationContext(),getString(R.string.preference_app_id),aid);
+                        }
+                        Log.e("TAG","Android Idler eşittir");
+                        isRegistered = true;
+                    } else {
+                        //message("Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
+                        Log.e("TAG","Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
+                    }
+                }
+
+            }
+
+        }
+    }
+
+    void authButtonClick(){
+
+        // Sharedden Oku
+        String registerText = SharedUtil.getValue(getApplicationContext(),getString(R.string.preference_register)); //= textAppId.getText().toString().trim();
+        String text = SharedUtil.getValue(getApplicationContext(),getString(R.string.preference_app_id)); //= textAppId.getText().toString().trim();
+        if(text.length() == 0)
+            return;
+
+        boolean isEmptyAndroidId = false;
+        boolean isEmptyImeiId = false;
+        boolean isFoundedApplicationId = false;
+        if(list.size() != 0){
+            for(int i = 0; i < list.size(); i++) {
+
+                Model lmodel = list.get(i);
+
+                if(lmodel.getApplicationId().equals(text)){
+                    Log.e("TAG","Find in list... " + list.get(i).getApplicationId() + " :: " + lmodel.getRefKey());
+                    // Kayit var
+                    referenceModel.setApplicationId(text);
+                    isFoundedApplicationId = true;
+                    if(lmodel.getAndroidId().length() != 0){
+                        if(lmodel.getAndroidId().equals(referenceModel.getAndroidId())){
+                            Log("AndroidIds equals");
+                            isEmptyAndroidId = false;
+                        }else{
+                            Log("Android Id not matching");
+                        }
+                    }else{
+                        Log("Android Idxx : " + lmodel.getAndroidId().length());
+                        isEmptyAndroidId = true;
+                    }
+
+                    if(lmodel.getImeiId().length() != 0){
+                        if(lmodel.getImeiId().equals(referenceModel.getImeiId())){
+                            Log("ImeiIds equals");
+                            isEmptyImeiId = false;
+                        }else{
+                            Log("Android Imei Id not matching");
+                        }
+                    }else{
+                        isEmptyImeiId = true;
+                    }
+                    Log("Reference Key: " + lmodel.getRefKey());
+                    if(isEmptyAndroidId || isEmptyImeiId ){
+                        Log("Equality");
+                        if(lmodel.getRefKey().length() != 0){
+                            Log("Update Referans Key");
+                            referenceModel.generateDate();
+                            root.child("Users/"+lmodel.getRefKey()).setValue(referenceModel);
+
+                            // Shared Write Values
+
+                        }
+                    }
+                }else{
+                    Log("Not Found Application Id");
+                }
+            }
+            if(!isFoundedApplicationId)
+                message("Not Found Application Id");
+        }
+    }
+
+    private void message(String msg){
+        Toast.makeText(MainActivity.this, msg,
+                Toast.LENGTH_SHORT).show();
+    }
+    private void Log(String message){
+        Log.e("TAG",message);
+    }
+
+    private void setToolBar(){
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        String deviceName = DeviceName.getDeviceName();
-//        Log.e("TAG","Device Name " + deviceName);
-//        DeviceName.with(this).request(new DeviceName.Callback() {
-//
-//            @Override public void onFinished(DeviceName.DeviceInfo info, Exception error) {
-//                String manufacturer = info.manufacturer;  // "Samsung"
-//                String name = info.marketName;            // "Galaxy S7 Edge"
-//                String model = info.model;                // "SAMSUNG-SM-G935A"
-//                String codename = info.codename;          // "hero2lte"
-//                String deviceName = info.getName();       // "Galaxy S7 Edge"
-//                // FYI: We are on the UI thread.
-//                String versionRelease = Build.VERSION.RELEASE;
-//
-//                Log.e("TAG","Manufacturer : " + manufacturer + " : " + " Name : " + name + " Model : " + model + " Codename : " + codename + " DeviceName : " + deviceName + " VersionRelease : " + versionRelease );
-//
-//            }
-//        });
-        SimpleDateFormat databaseDateTimeFormate = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-        String d = databaseDateTimeFormate.format(new Date());     //2009-06-30 08:29:
-        Log.e("TAG"," Date is : " + d);
-        authControl();
     }
     private void deviceInfo() {
         DeviceName.with(this).request(new DeviceName.Callback() {
@@ -196,6 +336,7 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
     private boolean hasPermission(String permission){
         if (ActivityCompat.checkSelfPermission(this, permission)
                 != PackageManager.PERMISSION_GRANTED) {
+            Log.e("TAG","hasPermission " + permission);
             return false;
         }
         return true;
@@ -234,7 +375,7 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
 
                 }
                 if(rejectedPermissions.size() == 0){
-                    Log.e("TAG", "All Permission is True");
+                    Log.d("TAG", "All Permission is True");
                     isPermissioned = true;
                 }
                 requestPermissions(rejectedPermissions,ALL_PERMISSIONS_RESULT);
@@ -263,17 +404,13 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
             model.setReleaseVersion(data.getValue(Model.class).getReleaseVersion());
             model.setCodename(data.getValue(Model.class).getCodename());
             model.setDate(data.getValue(Model.class).getDate());
+            model.setRefKey(data.getValue(Model.class).getRefKey());
 
             list.add(model);
-
-            if(model.getApplicationId().equals("1")){
-                Log.e("TAG","Model Application Id = 1");
-                refKey = ref.getKey();
-            }
             Log.e(TAG,"Model Ref: " + ref.getKey().toString() + " : " + model.toString());
         }
-
         //
+
         new TestAsync().execute();
 
     }
@@ -294,6 +431,11 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
         model.generateDate();
         root.child("Users/"+refKey).setValue(model);
     }
+
+//    private void updateFB(){
+//        referenceModel.generateDate();
+//        root.child("Users/"+lmodel.getRefKey()).setValue(referenceModel);
+//    }
 
     @Override
     public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -321,29 +463,64 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
-
-
     class TestAsync extends AsyncTask<Void, Integer, String>
     {
+        AlertDialog.Builder alertDialogBuilder = null;
+
         String TAG = getClass().getSimpleName();
 
         protected void onPreExecute (){
-            Log.d(TAG + " PreExceute","On pre Exceute......");
+            alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+            isRegistered = false;
+            Log.e(TAG + " PreExceute","On pre Exceute......");
         }
 
         protected String doInBackground(Void...arg0) {
-            Log.d(TAG + " DoINBackGround","On doInBackground...");
-            for(int i = 0; i < list.size(); i++){
-                compareList(list.get(i));
-            }
+            Log.e(TAG + " DoINBackGround","On doInBackground...");
+
+            registerControl();
+
+//            for(int i = 0; i < list.size(); i++){
+//                compareList(list.get(i));
+//            }
             return "You are at PostExecute";
         }
 
         protected void onProgressUpdate(Integer...a){
-            Log.d(TAG + " onProgressUpdate", "You are in progress update ... " + a[0]);
+            Log.e(TAG + " onProgressUpdate", "You are in progress update ... " + a[0]);
         }
 
         protected void onPostExecute(String result) {
+            if(!isRegistered){
+                // set title
+                alertDialogBuilder.setTitle("Uyarı");
+
+                // set dialog message
+                alertDialogBuilder
+                        .setMessage("Uygulama Bu Cihazda Kullanılamaz!")
+                        .setCancelable(false)
+                        .setPositiveButton("Tamam",new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                // if this button is clicked, close
+                                // current activity
+                                MainActivity.this.finish();
+                            }
+                        })
+                        .setNegativeButton("Çıkış",new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                dialog.cancel();
+                            }
+                        });
+
+                // create alert dialog
+                AlertDialog alertDialog = alertDialogBuilder.create();
+
+                // show it
+                alertDialog.show();
+            }
+
             Log.d(TAG + " onPostExecute", "" + result);
         }
     }
@@ -371,4 +548,85 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
 
         return super.onOptionsItemSelected(item);
     }
+
+
+
+
+    public class DialogMessage {
+
+        private  AlertDialog.Builder alertBuilder = null;
+        private String title;
+        private String message;
+        private String positiveButton;
+        private String negativeButton;
+        private Context context = null;
+
+        public DialogMessage(){}
+
+        public DialogMessage(Context context, String title, String message, String positiveButton, String negativeButton) {
+            this.context = context;
+            this.title = title;
+            this.message = message;
+            this.positiveButton = positiveButton;
+            this.negativeButton = negativeButton;
+        }
+
+        public void build(){
+
+            alertBuilder = new AlertDialog.Builder(this.context);
+            alertBuilder.setTitle(this.title);
+            // set dialog message
+            alertBuilder
+                    .setMessage(this.message)
+                    .setCancelable(false)
+                    .setPositiveButton(this.positiveButton, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,int id) {
+                            dialog.dismiss();
+                            MainActivity.this.finish();
+                        }
+                    })
+                    .setNegativeButton(this.negativeButton, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog,int id) {
+                            dialog.cancel();
+                            MainActivity.this.finish();
+                        }
+                    });
+        }
+
+        public void show(){
+            // create alert dialog
+            AlertDialog alertDialog = this.alertBuilder.create();
+            // show it
+            alertDialog.show();
+        }
+
+//    alertDialogBuilder.setTitle("Uyarı");
+//
+//    // set dialog message
+//    alertDialogBuilder
+//            .setMessage("Uygulama Bu Cihazda Kullanılamaz!")
+//            .setCancelable(false)
+//    .setPositiveButton("Tamam",new DialogInterface.OnClickListener() {
+//        public void onClick(DialogInterface dialog,int id) {
+//            // if this button is clicked, close
+//            // current activity
+//            MainActivity.this.finish();
+//        }
+//    })
+//            .setNegativeButton("Çıkış",new DialogInterface.OnClickListener() {
+//        public void onClick(DialogInterface dialog,int id) {
+//            // if this button is clicked, just close
+//            // the dialog box and do nothing
+//            dialog.cancel();
+//        }
+//    });
+//
+//    // create alert dialog
+//    AlertDialog alertDialog = alertDialogBuilder.create();
+//
+//    // show it
+//    alertDialog.show();
+    }
+
+
 }

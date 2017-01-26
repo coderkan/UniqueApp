@@ -105,7 +105,7 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
 
     @OnClick(R.id.fab) void fabButtonClick(View view){
         //addFireBase();
-        updateFireBase();
+        //updateFireBase();
         strLog = "";
         writeList();
     }
@@ -157,8 +157,6 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
                     }else{
                         isEmptyImeiId = true;
                     }
-
-
                     Log("Reference Key: " + lmodel.getRefKey());
                     if(isEmptyAndroidId || isEmptyImeiId ){
                         Log("Equality");
