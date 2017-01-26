@@ -13,18 +13,42 @@
     tools:context="com.eg.uniqueapp.auth.SettingsActivity"
     tools:showIn="@layout/activity_settings">
 
-
-    <EditText
-        android:id="@+id/text_app_id"
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/til1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Applicatin Id"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
-        android:layout_marginTop="40dp"
-        android:gravity="center"
-        android:maxLines="1"
-        />
+        app:errorEnabled="true"
+        >
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/email_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/email_string"
+            android:gravity="center"
+            />
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/til2"
+        android:layout_below="@+id/til1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        app:errorEnabled="true"
+        >
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/text_app_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/app_code"
+            android:gravity="center"
+            />
+    </android.support.design.widget.TextInputLayout>
 
     <Button
         android:id="@+id/button_auth"
@@ -32,21 +56,12 @@
         android:layout_height="wrap_content"
         android:text="Auth"
         android:textAllCaps="false"
-        android:layout_centerInParent="true"
+        android:layout_centerInParent="false"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
+        android:layout_below="@+id/til2"
         />
 
-    <TextView
-        android:id="@+id/text_log"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Applicatin Logs"
-        android:layout_marginLeft="15dp"
-        android:layout_marginRight="15dp"
-        android:layout_below="@id/button_auth"
-        android:gravity="center"
-        />
 
 
 </RelativeLayout>

@@ -4,6 +4,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
+import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -39,11 +41,17 @@ import butterknife.OnClick;
 public class SettingsActivity extends AppCompatActivity  implements ChildEventListener {
 
     @BindView(R.id.text_app_id)
-    EditText textAppId;
+    TextInputEditText textAppId;
 
-    @BindView(R.id.text_log)
-    TextView textLog;
-    private String strLog = "";
+    @BindView(R.id.email_text)
+    TextInputEditText textEmail;
+
+    @BindView(R.id.til1)
+    TextInputLayout emailLayout;
+
+    @BindView(R.id.til2)
+    TextInputLayout appIdLayout;
+
 
     ArrayList<Model> list = new ArrayList<>();
 
@@ -62,23 +70,29 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         ButterKnife.bind(this);
+        emailLayout.setError("Bu alan gereklidir.");
+        appIdLayout.setError("Bu alan gereklidir.");
         deviceInfo();
-        referenceModel = new Model();
-        referenceModel.setApplicationId("-1");
-        referenceModel.setAndroidId(PhoneChecker.getInstance().getAndroidId());
-        referenceModel.setImeiId(PhoneChecker.getInstance().getDeviceId());
-        referenceModel.add(DeviceInfoExt.Instance());
+        loadRef();
+        networkControl();
+        setToolBar();
+    }
 
-        log(PhoneChecker.getInstance().getAndroidId());
-        log(PhoneChecker.getInstance().getDeviceId());
-
+    private void networkControl() {
         if(((network = NetworkChecker.isNetWorkAvailable(getApplicationContext())) == Type.NONE)){
             message("Check Your Network Connection...");
         }
         if(network != Type.NONE){
             controlAuth();
         }
-        setToolBar();
+    }
+
+    private void loadRef() {
+        referenceModel = new Model();
+        referenceModel.setApplicationId("-1");
+        referenceModel.setAndroidId(PhoneChecker.getInstance().getAndroidId());
+        referenceModel.setImeiId(PhoneChecker.getInstance().getDeviceId());
+        referenceModel.add(DeviceInfoExt.Instance());
     }
 
     private void deviceInfo() {
@@ -106,14 +120,6 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
     @OnClick(R.id.fab) void fabButtonClick(View view){
         //addFireBase();
         //updateFireBase();
-        strLog = "";
-        writeList();
-    }
-
-    private void writeList() {
-        for(int i = 0; i < list.size(); i++){
-            log(list.get(i).toString() + "\n");
-        }
     }
 
     @OnClick(R.id.button_auth) void authButtonClick(){
@@ -192,11 +198,6 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
         Log.e("TAG",message);
     }
 
-    private void log(String msg){
-        if(msg.length() != 0)
-            strLog += " :: " + msg;
-        textLog.setText(strLog);
-    }
 
     private void controlAuth() {
         mAuth = FirebaseAuth.getInstance();
