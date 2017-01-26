@@ -167,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
 
                         //
                         if(lmodel.getApplicationId().equals("-1")){
+                            Log.e("TAG","App id  = -1 ");
                             isRegistered = false;
                         }
                     }
@@ -182,6 +183,11 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
                     } else {
                         //message("Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
                         Log.e("TAG","Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
+                    }
+
+                    if(lmodel.getApplicationId().equals("-1")){
+                        Log.e("TAG","AppApp id  = -1 ");
+                        isRegistered = false;
                     }
                 }
 
