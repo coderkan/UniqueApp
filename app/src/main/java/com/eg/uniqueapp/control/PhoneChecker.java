@@ -26,7 +26,6 @@ public class PhoneChecker {
         TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         this.deviceId = telephonyManager.getDeviceId();
         this.androidId = Settings.Secure.getString(context.getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
-        Log.e("TAG","Device Id is : "+ deviceId + " :: Android Id is : "+ androidId);
     }
 
     public String getDeviceId(){

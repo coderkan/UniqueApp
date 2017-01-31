@@ -67,7 +67,6 @@ public class SettingsPresenter {
         Log.e("TAG",message);
     }
 
-
     public void auth(String email, String ath, ArrayList<Model> list) {
 
         boolean em = true;
