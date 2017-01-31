@@ -24,7 +24,22 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
+    // ButterKnife
+    compile 'com.jakewharton:butterknife:8.4.0'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'
+
+    //firebase auth
+    compile 'com.google.firebase:firebase-auth:10.0.1'
+    //firebase db
+    compile 'com.google.firebase:firebase-database:10.0.1'
+
+    //Device Info
+    compile 'com.jaredrummler:android-device-names:1.1.2'
+
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
     testCompile 'junit:junit:4.12'
 }
+
+apply plugin: 'com.google.gms.google-services'

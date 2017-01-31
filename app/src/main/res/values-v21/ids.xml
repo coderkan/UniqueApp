@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="preference_app_id" type="id">PREF_APP_ID</item>
+</resources>
