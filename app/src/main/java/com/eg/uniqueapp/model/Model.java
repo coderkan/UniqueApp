@@ -7,6 +7,7 @@ import java.util.Date;
 
 public class Model {
 
+    private String mEmail;
     private String mApplicationId;
     private String mImeiId;
     private String mAndroidId;
@@ -21,12 +22,30 @@ public class Model {
     private String refKey;
 
 
+
+
     public Model(){}
     public Model(String mApplicationId, String mImeiId, String mAndroidId){
         this.mApplicationId = mApplicationId;
         this.mImeiId = mImeiId;
         this.mAndroidId = mAndroidId;
     }
+
+    public Model(String mApplicationId, String mImeiId, String mAndroidId,DeviceInfoExt ext){
+        this.mApplicationId = mApplicationId;
+        this.mImeiId = mImeiId;
+        this.mAndroidId = mAndroidId;
+        add(ext);
+    }
+
+    public String getmEmail() {
+        return mEmail;
+    }
+
+    public void setmEmail(String mEmail) {
+        this.mEmail = mEmail;
+    }
+
     public String getApplicationId() {
         return mApplicationId;
     }

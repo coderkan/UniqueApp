@@ -1,8 +1,6 @@
 package com.eg.uniqueapp.auth;
 
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
@@ -10,16 +8,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.eg.uniqueapp.R;
-import com.eg.uniqueapp.control.PhoneChecker;
-import com.eg.uniqueapp.model.DeviceInfoExt;
 import com.eg.uniqueapp.model.Model;
-import com.eg.uniqueapp.network.NetworkChecker;
-import com.eg.uniqueapp.network.Type;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -30,7 +22,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.jaredrummler.android.device.DeviceName;
 
 import java.util.ArrayList;
 
@@ -38,7 +29,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class SettingsActivity extends AppCompatActivity  implements ChildEventListener {
+public class SettingsActivity extends AppCompatActivity  implements ChildEventListener , SettingsView{
 
     @BindView(R.id.text_app_id)
     TextInputEditText textAppId;
@@ -60,58 +51,24 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
     private FirebaseAuth mAuth = null;
     private FirebaseAuth.AuthStateListener mAuthListener = null;
     private DatabaseReference root = FirebaseDatabase.getInstance().getReference().getRoot();
-    private Type network = Type.NONE;
-    private boolean isSignin = false;
+
     private String refKey = "";
     private Model referenceModel = null;
+    private SettingsPresenter presenter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         ButterKnife.bind(this);
+        presenter = new SettingsPresenter(getApplicationContext(),this);
+        presenter.init();
+        presenter.loadDeviceInfo();
+        presenter.loadRef();
         emailLayout.setError("Bu alan gereklidir.");
         appIdLayout.setError("Bu alan gereklidir.");
-        deviceInfo();
-        loadRef();
-        networkControl();
         setToolBar();
     }
-
-    private void networkControl() {
-        if(((network = NetworkChecker.isNetWorkAvailable(getApplicationContext())) == Type.NONE)){
-            message("Check Your Network Connection...");
-        }
-        if(network != Type.NONE){
-            controlAuth();
-        }
-    }
-
-    private void loadRef() {
-        referenceModel = new Model();
-        referenceModel.setApplicationId("-1");
-        referenceModel.setAndroidId(PhoneChecker.getInstance().getAndroidId());
-        referenceModel.setImeiId(PhoneChecker.getInstance().getDeviceId());
-        referenceModel.add(DeviceInfoExt.Instance());
-    }
-
-    private void deviceInfo() {
-        DeviceName.with(this).request(new DeviceName.Callback() {
-
-            @Override public void onFinished(DeviceName.DeviceInfo info, Exception error) {
-                String manufacturer = info.manufacturer;  // "Samsung"
-                String name = info.marketName;            // "Galaxy S7 Edge"
-                String model = info.model;                // "SAMSUNG-SM-G935A"
-                String codename = info.codename;          // "hero2lte"
-                String deviceName = info.getName();       // "Galaxy S7 Edge"
-                // FYI: We are on the UI thread.
-                String versionRelease = Build.VERSION.RELEASE;
-                DeviceInfoExt.Instance().add(info);
-                Log.e("TAG","Manufacturer : " + manufacturer + " : " + " Name : " + name + " Model : " + model + " Codename : " + codename + " DeviceName : " + deviceName + " VersionRelease : " + versionRelease );
-            }
-        });
-    }
-
     private void setToolBar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -123,81 +80,8 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
     }
 
     @OnClick(R.id.button_auth) void authButtonClick(){
-
-        String text = textAppId.getText().toString().trim();
-        if(text.length() == 0)
-            return;
-
-        boolean isEmptyAndroidId = false;
-        boolean isEmptyImeiId = false;
-        boolean isFoundedApplicationId = false;
-        if(list.size() != 0){
-            for(int i = 0; i < list.size(); i++) {
-
-                Model lmodel = list.get(i);
-
-                if(lmodel.getApplicationId().equals(text)){
-                    Log.e("TAG","Find in list... " + list.get(i).getApplicationId() + " :: " + lmodel.getRefKey());
-                    // Kayit var
-                    referenceModel.setApplicationId(text);
-                    isFoundedApplicationId = true;
-                    if(lmodel.getAndroidId().length() != 0){
-                        if(lmodel.getAndroidId().equals(referenceModel.getAndroidId())){
-                            Log("AndroidIds equals");
-                            isEmptyAndroidId = false;
-                        }else{
-                            Log("Android Id not matching");
-                        }
-                    }else{
-                        Log("Android Idxx : " + lmodel.getAndroidId().length());
-                        isEmptyAndroidId = true;
-                    }
-
-                    if(lmodel.getImeiId().length() != 0){
-                        if(lmodel.getImeiId().equals(referenceModel.getImeiId())){
-                            Log("ImeiIds equals");
-                            isEmptyImeiId = false;
-                        }else{
-                            Log("Android Imei Id not matching");
-                        }
-                    }else{
-                        isEmptyImeiId = true;
-                    }
-                    Log("Reference Key: " + lmodel.getRefKey());
-                    if(isEmptyAndroidId || isEmptyImeiId ){
-                        Log("Equality");
-                        if(lmodel.getRefKey().length() != 0){
-                            Log("Update Referans Key");
-                            referenceModel.generateDate();
-                            root.child("Users/"+lmodel.getRefKey()).setValue(referenceModel);
-
-                            // Shared Write Values
-
-                        }
-                    }
-                }else{
-                    Log("Not Found Application Id");
-
-                }
-            }
-            if(!isFoundedApplicationId)
-                message("Not Found Application Id");
-        }
-//        if(((network = NetworkChecker.isNetWorkAvailable(getApplicationContext())) == Type.NONE)){
-//            message("Check Your Network Connection...");
-//        }
-//        if(list.size() == 0){
-//            if(network != Type.NONE){
-//                controlAuth();
-//            }
-//        }
-        //log(textAppId.getText().toString());
+        presenter.auth(textEmail.getText().toString().trim() , textAppId.getText().toString().trim(), this.list);
     }
-
-    private void Log(String message){
-        Log.e("TAG",message);
-    }
-
 
     private void controlAuth() {
         mAuth = FirebaseAuth.getInstance();
@@ -233,44 +117,8 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
                 Toast.LENGTH_SHORT).show();
     }
 
-
     private void getUpdates(DataSnapshot ds) {
-        list.clear();
-        for(DataSnapshot data : ds.getChildren())
-        {
-            DatabaseReference ref = data.getRef();
-
-            Model model = new Model();
-            model.setApplicationId(data.getValue(Model.class).getApplicationId());
-            model.setImeiId(data.getValue(Model.class).getImeiId());
-            model.setAndroidId(data.getValue(Model.class).getAndroidId());
-            model.setMarketName(data.getValue(Model.class).getMarketName());
-            model.setManufacturer(data.getValue(Model.class).getManufacturer());
-            model.setReleaseVersion(data.getValue(Model.class).getReleaseVersion());
-            model.setCodename(data.getValue(Model.class).getCodename());
-            model.setDate(data.getValue(Model.class).getDate());
-            model.setRefKey(ref.getKey());
-            list.add(model);
-            Log.e(TAG,"Model Ref: " + ref.getKey().toString() + " : " + model.toString());
-        }
-    }
-
-    private void addFireBase() {
-        //Model model = new Model("1","11111111111", "2222222222222" );
-        Model model = new Model("2",PhoneChecker.getInstance().getDeviceId(), PhoneChecker.getInstance().getAndroidId());
-        model.add(DeviceInfoExt.Instance());
-        model.generateDate();
-
-        root.child("Users").push().setValue(model);
-    }
-
-    private void updateFireBase() {
-        //Model model = new Model("1","11111111111", "2222222222222" );
-        Model model = new Model("365",PhoneChecker.getInstance().getDeviceId(), PhoneChecker.getInstance().getAndroidId());
-        model.add(DeviceInfoExt.Instance());
-        model.generateDate();
-
-        root.child("Users/"+refKey).setValue(model);
+        presenter.getUpdates(ds);
     }
 
     @Override
@@ -288,11 +136,36 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
 
     @Override
     public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
     }
 
     @Override
     public void onCancelled(DatabaseError databaseError) {
 
+    }
+
+    @Override
+    public void onOpenAuth() {
+        controlAuth();
+    }
+
+    @Override
+    public void onShowMessage(String msg) {
+        message(msg);
+    }
+
+    @Override
+    public void onLoadModel(Model model){
+        this.referenceModel = model;
+    }
+
+    @Override
+    public void onLoadFirebase(Model lmodel, Model refModel) {
+        root.child("Users/"+lmodel.getRefKey()).setValue(refModel);
+    }
+
+    @Override
+    public void onLoadUpdates(ArrayList<Model> list) {
+        this.list.clear();
+        this.list = list;
     }
 }
