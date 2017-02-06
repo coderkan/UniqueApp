@@ -3,7 +3,6 @@ package com.eg.uniqueapp.main;
 import android.content.Context;
 import android.os.Build;
 import android.util.Log;
-
 import com.eg.uniqueapp.R;
 import com.eg.uniqueapp.control.PhoneChecker;
 import com.eg.uniqueapp.model.DeviceInfoExt;
@@ -73,24 +72,31 @@ public class MainPresenter {
     public void controlInit() {
         boolean hasAppId = false;
         boolean hasNetworkAvailable = true;
+
+        // Network Control
+        if(NetworkChecker.isNetWorkAvailable(this.context) == Type.NONE)
+            hasNetworkAvailable = false;
+
         String appId = SharedUtil.getValue(this.context, this.context.getString(R.string.preference_app_id));
         if (!appId.equals(SharedUtil.defValue))
             hasAppId = true;
 
         if(appId.equals("-1")){
-            this.view.onShowMessageDialog();
-            return;
+
+            if(!hasNetworkAvailable){
+                this.view.onShowMessageDialog("Cihaz Kullanılamaz Lütfen İnternet Bağlantısını Kontrol Ediniz...");
+                return;
+            }else{
+                this.view.onLoadAuth();
+                return;
+            }
+        }else{
+            if(!hasAppId && !hasNetworkAvailable){
+                this.view.onShowMessageDialog("Lütfen Cihazınızı İnternete Bağlayıp tekrar deneyiniz");
+                return;
+            }
+            this.view.onLoadAuth();
         }
-
-
-        if(NetworkChecker.isNetWorkAvailable(this.context) == Type.NONE)
-            hasNetworkAvailable = false;
-
-        if(!hasAppId && !hasNetworkAvailable){
-            this.view.onShowMessageDialog();
-            return;
-        }
-        this.view.onLoadAuth();
     }
 
     public void getUpdates(DataSnapshot ds) {
