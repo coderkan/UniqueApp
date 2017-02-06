@@ -92,17 +92,12 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
 
                 if (hasAppId) {
                     if (lmodel.getApplicationId().equals(appId)) { // App id kayıtlı diğer verilerin kontrolünü yap //
-                        Log.e("TAG","App Idler eşleşmektedir...");
                         if(!lmodel.getApplicationId().equals("-1")){
                             isRegistered = true;
                             SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "1"); // Register oldu
-                            Log.e("TAG","Register Oldu...");
                         }
                     } else {
-                        Log.e("TAG","App Idler eşleşmemektedir...");
-
                         if (lmodel.getAndroidId().equals(referenceModel.getAndroidId())) {
-                            Log.e("TAG", "Android Idler eşittir...");
                             String aid = lmodel.getApplicationId();
                             if(aid.length() != 0 && !aid.equals("-1")){
                                 SharedUtil.addValue(getApplicationContext(),getString(R.string.preference_app_id),aid);
@@ -110,35 +105,25 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
                             }else
                                 isRegistered = false;
                         } else {
-                            //SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "2"); // Register olmadı
-                            Log.e("TAG","XAndroid Idler eşit değildir..., Program Çalışmayacaktır...");
                         }
 
                         if(lmodel.getApplicationId().equals("-1")){
-                            Log.e("TAG","App id  = -1 ");
                             isRegistered = false;
                         }
-
                     }
                 } else {
                     if (lmodel.getAndroidId().equals(referenceModel.getAndroidId())) {
-                        //SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "1"); // Register oldu
                         String aid = lmodel.getApplicationId();
                         if(aid.length() != 0 && !aid.equals("-1")){
                             SharedUtil.addValue(getApplicationContext(),getString(R.string.preference_app_id),aid);
                             isRegistered = true;
                         }else{
-                            Log.e("TAG","Android Idler eşittir");
                             isRegistered = false;
                         }
-
                     } else {
-                        //message("Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
-                        Log.e("TAG","Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
                     }
 
                     if(lmodel.getApplicationId().equals("-1")){
-                        Log.e("TAG","AppApp id  = -1 ");
                         isRegistered = false;
                     }
                 }
