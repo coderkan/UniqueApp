@@ -149,7 +149,6 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
     }
 
 
-
     private void authControl() {
         if(NetworkChecker.isNetWorkAvailable(getApplicationContext()) == Type.NONE)
             return;

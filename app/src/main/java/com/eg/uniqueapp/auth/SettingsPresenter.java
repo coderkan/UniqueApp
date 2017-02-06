@@ -76,6 +76,11 @@ public class SettingsPresenter {
         if(ath.length() == 0)
             at = false;
 
+        if(NetworkChecker.isNetWorkAvailable(this.context) == Type.NONE){
+            this.view.onShowMessage("Lütfen İnternet Bağlantınızı Kontrol Ediniz...");
+            return;
+        }
+
         if(!em && at){
             this.view.onShowMessage("Lütfen Email Alanını Boş Bırakmayınız...");
             return;
@@ -88,6 +93,8 @@ public class SettingsPresenter {
             this.view.onShowMessage("Lütfen Email ve Ürün Kodunu Boş Bırakmayınız...");
             return;
         }
+
+
 
         boolean isEmptyAndroidId = false;
         boolean isEmptyImeiId = false;
