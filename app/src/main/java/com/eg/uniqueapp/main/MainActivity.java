@@ -12,19 +12,14 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
-
 
 import com.eg.uniqueapp.R;
 import com.eg.uniqueapp.auth.SettingsActivity;
 import com.eg.uniqueapp.control.PhoneChecker;
-import com.eg.uniqueapp.model.DeviceInfoExt;
 import com.eg.uniqueapp.model.Model;
 import com.eg.uniqueapp.network.NetworkChecker;
 import com.eg.uniqueapp.network.Type;
@@ -33,7 +28,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -48,40 +42,23 @@ import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity implements ChildEventListener, MainView {
 
-
-    private final static int CAMERA_RESULT = 103;
-    private final static int READ_EXTERNAL_RESULT = 104;
-    private final static int WRITE_EXTERNAL_RESULT = 105;
-    private final static int ACCESS_NETWORK_RESULT = 106;
-    private final static int ACCESS_NETWORK_STATE_RESULT = 107;
     private final static int ALL_PERMISSIONS_RESULT = 108;
 
-    ArrayList<String> permissions =  new ArrayList<String>();
-    private boolean isPermissioned = false;
-    private String deviceId = "";
-    private String androidId = "";
-
+    ArrayList<String> permissions =  new ArrayList<>();
     @BindView(R.id.text_views)
     TextView textView;
 
-
-    private String strLog = "";
 
     ArrayList<Model> list = new ArrayList<>();
 
     private final static String TAG = "SettingsActivity";
 
     private FirebaseAuth mAuth = null;
-    private FirebaseAuth.AuthStateListener mAuthListener = null;
     private DatabaseReference root = FirebaseDatabase.getInstance().getReference().getRoot();
-    private Type network = Type.NONE;
-    private boolean isSignin = false;
-    private String refKey = "";
 
     private Model referenceModel = null;
     private boolean isRegistered = true;
-
-
+    private boolean isPermissioned = false;
     private MainPresenter presenter = null;
 
     @Override
@@ -91,6 +68,10 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
         ButterKnife.bind(this);
         checkPermission();
         PhoneChecker.getInstance().initialize(this);
+        loadPresenter();
+    }
+
+    private void loadPresenter() {
         presenter = new MainPresenter(getApplicationContext(), this);
         presenter.loadDeviceInfo();
         presenter.loadRef();
@@ -111,45 +92,38 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
 
                 if (hasAppId) {
                     if (lmodel.getApplicationId().equals(appId)) { // App id kayıtlı diğer verilerin kontrolünü yap //
-                        Log.e("TAG","App Idler eşleşmektedir...");
-                        isRegistered = true;
-                        SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "1"); // Register oldu
+                        if(!lmodel.getApplicationId().equals("-1")){
+                            isRegistered = true;
+                            SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "1"); // Register oldu
+                        }
                     } else {
-                        Log.e("TAG","App Idler eşleşmemektedir...");
                         if (lmodel.getAndroidId().equals(referenceModel.getAndroidId())) {
-                            Log.e("TAG", "Android Idler eşittir...");
                             String aid = lmodel.getApplicationId();
                             if(aid.length() != 0 && !aid.equals("-1")){
                                 SharedUtil.addValue(getApplicationContext(),getString(R.string.preference_app_id),aid);
-
-                            }
-                            isRegistered = true;
+                                isRegistered = true;
+                            }else
+                                isRegistered = false;
                         } else {
-                            //SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "2"); // Register olmadı
-                            Log.e("TAG","XAndroid Idler eşit değildir..., Program Çalışmayacaktır...");
                         }
 
                         if(lmodel.getApplicationId().equals("-1")){
-                            Log.e("TAG","App id  = -1 ");
                             isRegistered = false;
                         }
                     }
                 } else {
                     if (lmodel.getAndroidId().equals(referenceModel.getAndroidId())) {
-                        //SharedUtil.addValue(getApplicationContext(), getString(R.string.preference_register), "1"); // Register oldu
                         String aid = lmodel.getApplicationId();
                         if(aid.length() != 0 && !aid.equals("-1")){
                             SharedUtil.addValue(getApplicationContext(),getString(R.string.preference_app_id),aid);
+                            isRegistered = true;
+                        }else{
+                            isRegistered = false;
                         }
-                        Log.e("TAG","Android Idler eşittir");
-                        isRegistered = true;
                     } else {
-                        //message("Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
-                        Log.e("TAG","Android Idler eşit değildir...Uygulama Çalışmayacaktır...");
                     }
 
                     if(lmodel.getApplicationId().equals("-1")){
-                        Log.e("TAG","AppApp id  = -1 ");
                         isRegistered = false;
                     }
                 }
@@ -157,16 +131,6 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
             }
 
         }
-    }
-
-    private void message(String msg){
-        Toast.makeText(MainActivity.this, msg,
-                Toast.LENGTH_SHORT).show();
-    }
-
-    private void setToolBar(){
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
     }
 
 
@@ -177,23 +141,12 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
         controlAuth();
     }
 
-    @OnClick(R.id.fab) void fabButtonClick(View view){
+    @OnClick(R.id.fab) void fabButtonClick(){
         startActivity(new Intent(MainActivity.this, SettingsActivity.class));
     }
 
     private void controlAuth() {
         mAuth = FirebaseAuth.getInstance();
-        mAuthListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if(user != null){
-                    Log.e(TAG,"onAuthStateChanged: signed_in: "+user.getUid());
-                }else{
-                    Log.e(TAG,"onAuthStateChanged:signed_out");
-                }
-            }
-        };
         signIn();
         root.addChildEventListener(this);
     }
@@ -211,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
     }
 
     public ArrayList<String> getPermissionRequested(ArrayList<String> perms){
-        ArrayList<String> permissions = new ArrayList<String>();
+        ArrayList<String> permissions = new ArrayList<>();
         for (String perm : perms
                 ) {
             if(!hasPermission(perm))
@@ -249,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
     {
-        ArrayList<String> rejectedPermissions = new ArrayList<String>();
+        ArrayList<String> rejectedPermissions = new ArrayList<>();
         switch (requestCode)
         {
             case ALL_PERMISSIONS_RESULT:
@@ -276,23 +229,6 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
         list.clear();
         presenter.getUpdates(ds);
         new TestAsync().execute();
-    }
-
-    private void addFireBase() {
-        //Model model = new Model("1","11111111111", "2222222222222" );
-        Model model = new Model("2",PhoneChecker.getInstance().getDeviceId(), PhoneChecker.getInstance().getAndroidId());
-        model.add(DeviceInfoExt.Instance());
-        model.generateDate();
-
-        root.child("Users").push().setValue(model);
-    }
-
-    private void updateFireBase() {
-        //Model model = new Model("1","11111111111", "2222222222222" );
-        Model model = new Model("365",PhoneChecker.getInstance().getDeviceId(), PhoneChecker.getInstance().getAndroidId());
-        model.add(DeviceInfoExt.Instance());
-        model.generateDate();
-        root.child("Users/"+refKey).setValue(model);
     }
 
     @Override
@@ -328,8 +264,9 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
     }
 
     @Override
-    public void onShowMessageDialog() {
-        DialogMessage dm = new DialogMessage(MainActivity.this, "Uyarı","Lütfen Cihazınızı İnternete Bağlayıp tekrar deneyiniz","Tamam","Çıkış");
+    public void onShowMessageDialog(String msg) {
+        //"Lütfen Cihazınızı İnternete Bağlayıp tekrar deneyiniz"
+        DialogMessage dm = new DialogMessage(MainActivity.this, "Uyarı",msg,"Tamam");
         dm.build();
         dm.show();
     }
@@ -408,17 +345,13 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
         private String title;
         private String message;
         private String positiveButton;
-        private String negativeButton;
         private Context context = null;
 
-        public DialogMessage(){}
-
-        public DialogMessage(Context context, String title, String message, String positiveButton, String negativeButton) {
+        public DialogMessage(Context context, String title, String message, String positiveButton) {
             this.context = context;
             this.title = title;
             this.message = message;
             this.positiveButton = positiveButton;
-            this.negativeButton = negativeButton;
         }
 
         public void build(){
@@ -433,13 +366,6 @@ public class MainActivity extends AppCompatActivity implements ChildEventListene
                             MainActivity.this.finish();
                         }
                     });
-                    /*
-                    .setNegativeButton(this.negativeButton, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog,int id) {
-                            dialog.dismiss();
-                            MainActivity.this.finish();
-                        }
-                    });*/
         }
 
         public void show(){

@@ -76,6 +76,11 @@ public class SettingsPresenter {
         if(ath.length() == 0)
             at = false;
 
+        if(NetworkChecker.isNetWorkAvailable(this.context) == Type.NONE){
+            this.view.onShowMessage("Lütfen İnternet Bağlantınızı Kontrol Ediniz...");
+            return;
+        }
+
         if(!em && at){
             this.view.onShowMessage("Lütfen Email Alanını Boş Bırakmayınız...");
             return;
@@ -98,49 +103,36 @@ public class SettingsPresenter {
                 Model lmodel = list.get(i);
 
                 if(lmodel.getApplicationId().equals(ath)){
-                    Log.e("TAG","Find in list... " + list.get(i).getApplicationId() + " :: " + lmodel.getRefKey());
-                    // Kayit var
                     this.refModel.setApplicationId(ath);
                     isFoundedApplicationId = true;
                     if(lmodel.getAndroidId().length() != 0){
                         if(lmodel.getAndroidId().equals(this.refModel.getAndroidId())){
-                            Log("AndroidIds equals");
                             isEmptyAndroidId = false;
                             this.view.onShowMessage("Veriler Daha Önceden Girilmiştir...");
                         }else{
-                            Log("Android Id not matching");
                         }
                     }else{
-                        Log("Android Idxx : " + lmodel.getAndroidId().length());
                         isEmptyAndroidId = true;
                     }
 
                     if(lmodel.getImeiId().length() != 0){
                         if(lmodel.getImeiId().equals(this.refModel.getImeiId())){
-                            Log("ImeiIds equals");
                             isEmptyImeiId = false;
                             this.view.onShowMessage("Veriler Daha Önceden Girilmiştir...");
                         }else{
-                            Log("Android Imei Id not matching");
                         }
                     }else{
                         isEmptyImeiId = true;
                     }
-                    Log("Reference Key: " + lmodel.getRefKey());
                     if(isEmptyAndroidId || isEmptyImeiId ){
-                        Log("Equality");
                         if(lmodel.getRefKey().length() != 0){
-                            Log("Update Referans Key");
                             this.refModel.generateDate();
                             this.refModel.setmEmail(email);
                             this.view.onLoadFirebase(lmodel,this.refModel);
                             this.view.onShowMessage("Başarılı bir şekilde veriler kaydedilmiştir...");
-                            // Shared Write Values
                         }
                     }
                 }else{
-                    Log("Not Found Application Id");
-
                 }
             }
             if(!isFoundedApplicationId)

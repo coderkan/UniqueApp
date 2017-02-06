@@ -168,4 +168,5 @@ public class SettingsActivity extends AppCompatActivity  implements ChildEventLi
         this.list.clear();
         this.list = list;
     }
+
 }

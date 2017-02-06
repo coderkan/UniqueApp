@@ -11,7 +11,7 @@ import java.util.ArrayList;
 public interface MainView {
     void onLoadModel(Model referenceModel);
 
-    void onShowMessageDialog();
+    void onShowMessageDialog(String msg);
 
     void onLoadAuth();
 
